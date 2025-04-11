@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List
 from datamodel import Order, OrderDepth, TradingState
 from collections import deque
@@ -5,6 +6,25 @@ import math
 import numpy as np
 
 class Trader:
+    """
+    Bot avancé pour Round 2 de Prosperity 3.
+    Principales fonctionnalités :
+    1) Market making sur RAINFOREST_RESIN (autour d'une fair value fixe ~10k).
+    2) Mean reversion sur KELP et SQUID_INK (EMA dynamique + seuils).
+    3) Arbitrage sur PICNIC_BASKET1 et PICNIC_BASKET2 via leur valeur intrinsèque
+       (6*C + 3*J + D) / (4*C + 2*J) respectivement.
+    4) Gestion de risque dynamique :
+       - Positions surveillées pour respecter les limites.
+       - Liquidation automatique en fin de round ou si position trop importante.
+    5) Journalisation et logs basiques (PNL estimé, positions, etc.).
+
+    Retour attendu par run(): (orders: Dict[str, List[Order]], conversion: Dict, trader_data: str)
+    Où:
+        - orders: dictionnaire {produit -> liste d'ordres}
+        - conversion: un dictionnaire si tu veux faire des conversions internes (souvent vide)
+        - trader_data: string JSON-serializable, contenant info debug ou stats.
+    """
+
     def __init__(self):
         # Limites de positions
         self.position_limits = {
@@ -35,13 +55,17 @@ class Trader:
             "SQUID_INK": 3   # Ecart plus grand car plus volatile
         }
 
-
+        # Paramètres d'arbitrage pour Picnic Baskets
+        # Diff (fair_value - basket_mid) au-delà duquel on prend position
         self.arb_threshold_pb1 = 5
         self.arb_threshold_pb2 = 4
 
         # Log interne
         self.log_messages = []
 
+        # Liquidation automatique
+        # - On suppose qu'on veut liquider TOUTES les positions au timestamp > 980_000 (par ex.),
+        #   ou si un drawdown potentiel trop fort.
         self.end_of_round = 980_000  # hypothétique fin de round. Ajuster si besoin.
 
         # Suivi PNL naïf (approximation, juste pour logs)
@@ -63,7 +87,7 @@ class Trader:
 
     def get_mid_price(self, order_depth: OrderDepth):
         """Retourne le mid price si possible, sinon None."""
-        if not order_depth.buy_orders or not order_depth.sell_orders:
+        if not order_depth or not order_depth.buy_orders or not order_depth.sell_orders:
             return None
         best_bid = max(order_depth.buy_orders.keys())
         best_ask = min(order_depth.sell_orders.keys())
@@ -120,6 +144,7 @@ class Trader:
         return None
 
     def place_order_if_profitable(self, result_dict, product: str, price: float, volume: int):
+        """Fonction utilitaire pour placer un ordre si volume != 0."""
         if volume == 0:
             return
         # On le place directement.
@@ -127,6 +152,10 @@ class Trader:
         self.log(f"Placing order on {product}: price={price}, vol={volume}")
 
     def handle_liquidation(self, state: TradingState, result: Dict[str, List[Order]]):
+        """Liquidation automatique :
+        - Si on approche de la fin du round (timestamp > self.end_of_round).
+        - Peut aussi être appelée si on veut tout simplement forcer la position à 0.
+        """
         if state.timestamp < self.end_of_round:
             return  # Pas encore en phase de liquidation
 
@@ -140,7 +169,6 @@ class Trader:
 
             if pos > 0:
                 # Pour liquider, on vend (ordre négatif)
-                # On prend le meilleur bid.
                 best_bid = max(od.buy_orders.keys()) if od.buy_orders else None
                 if best_bid is not None:
                     volume_possible = min(od.buy_orders[best_bid], pos)
@@ -152,8 +180,12 @@ class Trader:
                     volume_possible = min(-od.sell_orders[best_ask], -pos)
                     self.place_order_if_profitable(result, product, best_ask, volume_possible)
 
-    def run(self, state: TradingState) -> Dict[str, List[Order]]:
-        """Point d'entrée. Retourne un dict {product: [list d'ordres]}"""
+    def run(self, state: TradingState):
+        """Point d'entrée. Retourne un triple (orders, conversion, traderData) pour coller à l'API.
+        - orders (Dict[str, List[Order]]): Les ordres à exécuter.
+        - conversion (Dict): Peut rester vide.
+        - traderData (str): Une chaîne JSON.
+        """
         # 1) Mettre à jour positions / PnL estimé
         self.update_positions(state)
         self.update_pnl_estimate(state)
@@ -170,14 +202,16 @@ class Trader:
 
             # On prend d'abord les opportunités de marché existantes
             # (acheter si vend < fair_resin, vendre si acheteur > fair_resin)
-            for sell_price, sell_vol in sorted(r_depth.sell_orders.items()):
+            sorted_sells = sorted(r_depth.sell_orders.items(), key=lambda x: x[0])
+            for sell_price, sell_vol in sorted_sells:
                 if sell_price < fair_resin and rpos < self.position_limits["RAINFOREST_RESIN"]:
                     vol = min(-sell_vol, self.position_limits["RAINFOREST_RESIN"] - rpos)
                     if vol > 0:
                         self.place_order_if_profitable(result, "RAINFOREST_RESIN", sell_price, vol)
                         rpos += vol
 
-            for buy_price, buy_vol in sorted(r_depth.buy_orders.items(), reverse=True):
+            sorted_buys = sorted(r_depth.buy_orders.items(), key=lambda x: x[0], reverse=True)
+            for buy_price, buy_vol in sorted_buys:
                 if buy_price > fair_resin and rpos > -self.position_limits["RAINFOREST_RESIN"]:
                     vol = min(buy_vol, self.position_limits["RAINFOREST_RESIN"] + rpos)
                     if vol > 0:
@@ -218,11 +252,10 @@ class Trader:
 
             pos = self.positions[product]
             # Exploiter si le marché a un mispricing par rapport à l'EMA.
-            if self.ema[product] is not None:
-                diff = midp - self.ema[product] if midp else 0
+            if self.ema[product] is not None and midp is not None:
+                diff = midp - self.ema[product]
                 # Condition d'achat: diff < -threshold => le prix actuel est trop bas
                 if diff < -self.threshold[product] and pos < self.position_limits[product]:
-                    # On essaie d'acheter au meilleur ask
                     best_ask = None
                     best_ask_vol = 0
                     if depth.sell_orders:
@@ -341,4 +374,15 @@ class Trader:
 
         self.print_logs()
 
-        return result
+        # On prépare un JSON (string) pour traderData
+        trader_data = {
+            "pnl_estimate": self.pnl_estimate,
+            "positions": self.positions
+        }
+        trader_data_str = json.dumps(trader_data)
+
+        # On renvoie 3 valeurs pour coller à l'API :
+        #  - Les ordres
+        #  - Un dict conversion vide
+        #  - Le traderData sous forme de string JSON.
+        return result, {}, trader_data_str
