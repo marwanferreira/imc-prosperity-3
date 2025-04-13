@@ -8,7 +8,7 @@ We are a group of **5 French Financial Engineering and Applied Mathematics stude
 
 ## 🏝️ the competition
 
-**IMC Prosperity 3 – 2025** is an algorithmic trading competition that lasted over 15 days, with over **9000 teams participating globally**.
+**IMC Prosperity 3 – 2025** is an algorithmic trading competition that lasted over 15 days, with over **10000 teams participating globally**.
 
 In the challenge, we were tasked with **algorithmically trading various products**, such as amethysts, starfruit, orchids, coconuts, gift baskets, and more, with the goal of **maximizing seashells** – the currency of our island. The trading environment mimicked real markets, and we competed against **bots whose behavior could be inferred from historical data**.
 
