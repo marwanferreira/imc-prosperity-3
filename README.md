@@ -1,4 +1,4 @@
-# Fat Fingers 🧠💥
+# Fat Fingers 👆
 
 Welcome to the GitHub repository of **Fat Fingers**, our team for the **IMC Prosperity 3 (2025)** algorithmic trading competition.
 
@@ -74,10 +74,11 @@ We used a full suite of testing and visualization tools to build, debug, and opt
 - [✅ JMerle’s Backtester](https://github.com/jmerle/imc-prosperity-3-backtester)
 - [✅ JMerle’s Visualizer](https://github.com/jmerle/imc-prosperity-3-visualizer)
 - [✅ JMerle’s Submitter](https://github.com/jmerle/imc-prosperity-3-submitter)
+- [✅ IMC Discord](https://discord.com/channels/1001852729725046804/1337359637128806490)
 
-💙 Huge thanks to [**@jmerle**](https://github.com/jmerle) for making his tools public and battle-tested. These made the IMC competition **actually fun to engineer for**.
+Huge thanks to [**@jmerle**](https://github.com/jmerle) for making his tools public and battle-tested. These made the IMC competition **actually fun to engineer for**.
 
 ---
 
-## 📂 repository structure
+
 
