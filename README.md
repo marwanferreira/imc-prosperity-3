@@ -1,85 +1,81 @@
 # Fat Fingers 🧠💥
 
-Welcome to the GitHub repository of **Fat Fingers**, our team for the **IMC Prosperity 2025** algorithmic trading competition.
+Welcome to the GitHub repository of **Fat Fingers**, our team for the **IMC Prosperity 3 (2025)** algorithmic trading competition.
 
-We are a group of **5 French Financial Engineering and Applied Mathematics students** from **CY Tech**, combining our quantitative backgrounds and passion for markets to compete against thousands of teams globally.
+We are a group of **5 French Financial Engineering and Applied Mathematics students from CY Tech**, combining quantitative reasoning, statistical modeling, and coding to build high-frequency trading strategies in a simulated multi-asset market.
 
-This repo contains all of our research, trading algorithms, experiments, and backtesting logs for each round.
+---
+
+## 🏝️ the competition
+
+**IMC Prosperity 3 – 2025** is an algorithmic trading competition that lasted over 15 days, with over **9000 teams participating globally**.
+
+In the challenge, we were tasked with **algorithmically trading various products**, such as amethysts, starfruit, orchids, coconuts, gift baskets, and more, with the goal of **maximizing seashells** – the currency of our island. The trading environment mimicked real markets, and we competed against **bots whose behavior could be inferred from historical data**.
+
+At the end of each round, our algorithm was evaluated independently, and the resulting PnL ranked against all other teams.
+
+In addition to the main algorithmic focus, there were also **manual trading mini-games**. These varied in nature and accounted for a small portion of total profit.
+
+📚 For documentation on the trading environment and structure, refer to the official [Prosperity 3 Wiki](https://imc-prosperity.notion.site/Prosperity-3-Wiki-19ee8453a09380529731c4e6fb697ea4).
 
 ---
 
 ## 👥 the team
 
+We proudly represented **CY Tech, France** with a shared love for quant finance, data science, and algorithmic design.
+
 | Name | LinkedIn |
 |------|----------|
-| **Marwan Ferreira da Silva** | [🔗 LinkedIn](https://www.linkedin.com/in/marwan-ferreira-da-silva/) |
-| **Justin Léon**              | [🔗 LinkedIn](https://www.linkedin.com/in/justin-l%C3%A9on/) |
-| **Dorian Beurthe**           | [🔗 LinkedIn](https://www.linkedin.com/in/dorian-beurthe-4a9a772b3/) |
-| **Gabriel Tran-Phat**        | [🔗 LinkedIn](https://www.linkedin.com/in/gabriel-tran-phat-751477317/) |
-| **Julien Ruiz**              | [🔗 LinkedIn](https://www.linkedin.com/in/julien-ruiz75/) |
-
-We’re curious, competitive, and love learning through high-pressure trading environments.
+| **Marwan Ferreira da Silva** | [🔗](https://www.linkedin.com/in/marwan-ferreira-da-silva/) |
+| **Justin Léon**              | [🔗](https://www.linkedin.com/in/justin-l%C3%A9on/) |
+| **Dorian Beurthe**           | [🔗](https://www.linkedin.com/in/dorian-beurthe-4a9a772b3/) |
+| **Gabriel Tran-Phat**        | [🔗](https://www.linkedin.com/in/gabriel-tran-phat-751477317/) |
+| **Julien Ruiz**              | [🔗](https://www.linkedin.com/in/julien-ruiz75/) |
 
 ---
 
-## 🏆 the competition
+## 📊 our results
 
-**IMC Prosperity** is a global algorithmic trading challenge hosted by [IMC Trading](https://www.imc.com). Over 15 days, teams compete to generate the most **seashells** (virtual profit) by trading fictional products in a simulated market.
+### Round 1: *Amethysts & Starfruit*
 
-Each round introduces new complexities, including:
-- Fair value estimation under uncertainty
-- Basket arbitrage across correlated instruments
-- Position limits, latency, volatility, and more
-
----
-
-## 📊 results so far
-
-### Round 1 — *Basic Market Making*
 - 🐚 **49,762 seashells**
-- 🌍 **1705th place overall** out of 10,000+ teams
+- 🌍 **1705th out of 10,000+ teams**
 - 🕹️ **1467th in manual trading**
 - 🇫🇷 **58th in France**
 
-We built fair-value-based market makers for Amethysts and Starfruit, adjusting dynamically to book depth and microstructure conditions.
+**Strategy:**  
+We implemented a **fair-value market making model**, relying on constant mid-prices (for amethysts) and rolling average mid estimation (for starfruit). We adjusted our edge dynamically and handled inventory risk by flattening positions using 0 EV trades when available.
 
 ---
 
-### Round 2 — *Multi-Product Trading + Basket Arbitrage (in progress)*
+### Round 2: *CROISSANTS, BASKETS, and Multi-Product Arbitrage*
 
-We are currently in Round 2, trading:
-- CROISSANTS 🥐
-- JAMS 🍓
-- DJEMBES 🪘
-- RAINFOREST_RESIN 🌿
-- PICNIC_BASKET1 & 2 🎁
+- ✅ Currently in progress
+- 🧪 Local backtest peak: **112,004 seashells**
+- 📈 IMC evaluation score: **13,500 seashells**
 
-Our strategies feature:
-- Hybrid EMA + mean fair value calculation
-- Volatility-aware spreads and confidence-weighted execution
-- Dynamic basket arbitrage logic
-- Momentum filtering on directional products
+**Strategy:**
+- EMA + recent mean **hybrid fair value**
+- **Volatility-aware spreads**
+- **Confidence-scaled order sizes**
+- **Basket arbitrage** on PICNIC_BASKET1 and PICNIC_BASKET2
+- **Momentum filtering** to avoid fading strong directional moves
+- Strict **position limit management**
 
-**Local Backtest Best:**  
-💰 **112,004 seashells**
-
-**Private IMC Evaluation Score:**  
-📈 **13,500 seashells**
-
-We're actively tuning for generalization to their hidden datasets, with a goal of reaching **200k** in future rounds.
+We are now experimenting with directional bias models, VWAP layers, and aggressive execution logic for high-volatility assets like CROISSANTS.
 
 ---
 
-## 🧰 tools & resources
+## 🛠️ tools & tech
 
-Throughout the competition, we leveraged:
+We used a full suite of testing and visualization tools to build, debug, and optimize our strategies:
 
-- 📚 The official [Prosperity 3 Wiki](https://prosperity.imc.com)
-- 🧪 [JMerle’s IMC Backtesting Suite](https://github.com/jmerle/imc-prosperity-3-backtester)
-- 📊 [JMerle’s Visualizer](https://github.com/jmerle/imc-prosperity-3-visualizer)
-- 📤 [JMerle’s Submitter Tool](https://github.com/jmerle/imc-prosperity-3-submitter)
+- [✅ Prosperity 3 Wiki](https://imc-prosperity.notion.site/Prosperity-3-Wiki-19ee8453a09380529731c4e6fb697ea4)
+- [✅ JMerle’s Backtester](https://github.com/jmerle/imc-prosperity-3-backtester)
+- [✅ JMerle’s Visualizer](https://github.com/jmerle/imc-prosperity-3-visualizer)
+- [✅ JMerle’s Submitter](https://github.com/jmerle/imc-prosperity-3-submitter)
 
-🔗 Huge thanks to **[JMerle](https://github.com/jmerle)** for creating such incredible open-source tools that made testing, debugging, and optimizing a pleasure.
+💙 Huge thanks to [**@jmerle**](https://github.com/jmerle) for making his tools public and battle-tested. These made the IMC competition **actually fun to engineer for**.
 
 ---
 
