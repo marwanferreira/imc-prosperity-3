@@ -1,30 +1,26 @@
-from datamodel import Order, OrderDepth, TradingState, Trade
+from datamodel import Order, OrderDepth, TradingState
 from typing import List, Dict
 import jsonpickle
 from statistics import mean
 
-# Configuration
+# --- CONFIGURATION ---
 POSITION_LIMITS = {
     "RAINFOREST_RESIN": 50,
     "KELP": 50,
     "SQUID_INK": 50,
     "CROISSANTS": 50,
     "JAMS": 50,
-    "DJEMBES": 50
+    "DJEMBES": 50,
+    "PICNIC_BASKET1": 60,
+    "PICNIC_BASKET2": 60
 }
 
-MIN_SPREAD = {
-    "RAINFOREST_RESIN": 1,
-    "KELP": 2,
-    "SQUID_INK": 8,
-    "CROISSANTS": 1,
-    "JAMS": 1,
-    "DJEMBES": 1
-}
+BASKET1_COMPONENTS = {"CROISSANTS": 6, "JAMS": 3, "DJEMBES": 1}
+BASKET2_COMPONENTS = {"CROISSANTS": 4, "JAMS": 2}
 
-ALPHA = 0.3  # Pour EMA (moyenne exponentielle)
-HISTORY_LENGTH = 30
+ALPHA = 0.2  # EMA lissage
 
+# --- TRADER CLASS ---
 class Trader:
     def run(self, state: TradingState):
         result = {}
@@ -37,69 +33,85 @@ class Trader:
             except:
                 trader_memory = {}
 
+        # --- JUSTES VALEURS (EMA) ---
         fair_values = {}
-
         for product in state.order_depths:
-            history_key = f"{product}_HISTORY"
-            prices = trader_memory.get(history_key, [])
-            trades: List[Trade] = state.market_trades.get(product, [])
+            trades = state.market_trades.get(product, [])
+            ema_key = f"{product}_EMA"
+            old_ema = trader_memory.get(ema_key, 100)
             for trade in trades:
-                prices.append(trade.price)
-            prices = prices[-HISTORY_LENGTH:]
-            trader_memory[history_key] = prices
+                old_ema = ALPHA * trade.price + (1 - ALPHA) * old_ema
+            fair_values[product] = old_ema
+            trader_memory[ema_key] = old_ema
 
-            if len(prices) >= 3:
-                ema = prices[0]
-                for price in prices[1:]:
-                    ema = ALPHA * price + (1 - ALPHA) * ema
-                fair_values[product] = ema
-            else:
-                fair_values[product] = 100
-
+        # --- MARKET MAKING AMÉLIORÉ ---
         for product in ["RAINFOREST_RESIN", "KELP", "SQUID_INK", "CROISSANTS", "JAMS", "DJEMBES"]:
-            orders = self.smart_market_maker(product, state.order_depths[product],
-                                             fair_values[product], state.position.get(product, 0),
-                                             POSITION_LIMITS[product], state.timestamp)
+            orders = self.smart_market_maker(
+                product,
+                state.order_depths[product],
+                fair_values[product],
+                state.position.get(product, 0),
+                POSITION_LIMITS[product]
+            )
             if orders:
                 result[product] = orders
 
+        # --- ARBITRAGE PANIER 1 & 2 ---
+        for basket, components in [("PICNIC_BASKET1", BASKET1_COMPONENTS), ("PICNIC_BASKET2", BASKET2_COMPONENTS)]:
+            orders = self.basket_arbitrage(basket, components, state, fair_values)
+            if orders:
+                result[basket] = orders
+
         return result, conversions, jsonpickle.encode(trader_memory)
 
-    def smart_market_maker(self, product, order_depth: OrderDepth, fair_value: float,
-                            position: int, limit: int, timestamp: int) -> List[Order]:
+    # --- MARKET MAKING DYNAMIQUE ---
+    def smart_market_maker(self, product, order_depth, fair_value, position, limit):
+        spread = max(1, int(fair_value * 0.01))  # Spread 1% ajusté
         orders = []
-        spread = max(MIN_SPREAD[product], int(fair_value * 0.01))
 
-        # Volatilité adaptative : plus de prudence si haute variance
-        if product == "SQUID_INK" and timestamp < 50000:
-            spread += 5
-
-        sorted_asks = sorted(order_depth.sell_orders.items())
-        sorted_bids = sorted(order_depth.buy_orders.items(), reverse=True)
-
-        # Buy logic
-        for ask_price, ask_volume in sorted_asks:
+        # Acheter si c’est sous-évalué
+        for ask_price, ask_volume in sorted(order_depth.sell_orders.items()):
             if ask_price < fair_value - spread:
-                buy_qty = min(-ask_volume, limit - position)
-                if buy_qty > 0:
-                    orders.append(Order(product, ask_price, buy_qty))
-                    position += buy_qty
+                qty = min(-ask_volume, limit - position)
+                if qty > 0:
+                    orders.append(Order(product, ask_price, qty))
+                    position += qty
 
-        # Sell logic
-        for bid_price, bid_volume in sorted_bids:
+        # Vendre si c’est sur-évalué
+        for bid_price, bid_volume in sorted(order_depth.buy_orders.items(), reverse=True):
             if bid_price > fair_value + spread:
-                sell_qty = min(bid_volume, limit + position)
-                if sell_qty > 0:
-                    orders.append(Order(product, bid_price, -sell_qty))
-                    position -= sell_qty
-
-        # Liquidation en fin de journée
-        if timestamp > 99000 and position != 0:
-            best_bid = sorted_bids[0][0] if sorted_bids else None
-            best_ask = sorted_asks[0][0] if sorted_asks else None
-            liquidation_price = best_bid if position > 0 else best_ask
-            if liquidation_price:
-                orders.append(Order(product, liquidation_price, -position))
+                qty = min(bid_volume, limit + position)
+                if qty > 0:
+                    orders.append(Order(product, bid_price, -qty))
+                    position -= qty
 
         return orders
 
+    # --- ARBITRAGE PANIER ---
+    def basket_arbitrage(self, basket_name, components, state, fair_values):
+        orders = []
+        position = state.position.get(basket_name, 0)
+        order_depth = state.order_depths[basket_name]
+        limit = POSITION_LIMITS[basket_name]
+
+        # Juste valeur calculée dynamiquement
+        component_value = sum(fair_values[prod] * qty for prod, qty in components.items())
+        threshold = 3  # Arbitrage threshold
+
+        # VENTE du panier s’il est trop cher
+        for bid_price, bid_volume in sorted(order_depth.buy_orders.items(), reverse=True):
+            if bid_price > component_value + threshold:
+                qty = min(bid_volume, limit + position)
+                if qty > 0:
+                    orders.append(Order(basket_name, bid_price, -qty))
+                    position -= qty
+
+        # ACHAT du panier s’il est trop bon marché
+        for ask_price, ask_volume in sorted(order_depth.sell_orders.items()):
+            if ask_price < component_value - threshold:
+                qty = min(-ask_volume, limit - position)
+                if qty > 0:
+                    orders.append(Order(basket_name, ask_price, qty))
+                    position += qty
+
+        return orders
