@@ -28,8 +28,8 @@ We proudly represented **CY Tech, France** with a shared love for quant finance,
 |------|----------|
 | **Marwan Ferreira da Silva** | [🔗](https://www.linkedin.com/in/marwan-ferreira-da-silva/) |
 | **Julien Ruiz**              | [🔗](https://www.linkedin.com/in/julien-ruiz75/) |
-| **Justin Léon**              | [🔗](https://www.linkedin.com/in/justin-l%C3%A9on/) |
 | **Dorian Beurthe**           | [🔗](https://www.linkedin.com/in/dorian-beurthe-4a9a772b3/) |
+| **Justin Léon**              | [🔗](https://www.linkedin.com/in/justin-l%C3%A9on/) |
 | **Gabriel Tran-Phat**        | [🔗](https://www.linkedin.com/in/gabriel-tran-phat-751477317/) |
 
 ---
