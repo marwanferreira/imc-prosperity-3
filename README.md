@@ -1,3 +1,4 @@
+
 # Fat Fingers 👆
 
 Welcome to the GitHub repository of **Fat Fingers**, our team for the **IMC Prosperity 3 (2025)** algorithmic trading competition.
@@ -50,9 +51,12 @@ We implemented a **fair-value market making model**, relying on constant mid-pri
 
 ### Round 2: *CROISSANTS, BASKETS, and Multi-Product Arbitrage*
 
-- ✅ Currently in progress
-- 🧪 Local backtest peak: **112,004 seashells**
+- 🐚 **78,348 seashells**
+- 🌍 **937th place overall**
+- 🕹️ **291st in manual trading**
+- 🇫🇷 **38th in France**
 - 📈 IMC evaluation score: **13,500 seashells**
+- 🧪 Local backtest peak: **112,004 seashells**
 
 **Strategy:**
 - EMA + recent mean **hybrid fair value**
@@ -62,7 +66,7 @@ We implemented a **fair-value market making model**, relying on constant mid-pri
 - **Momentum filtering** to avoid fading strong directional moves
 - Strict **position limit management**
 
-We are now experimenting with directional bias models, VWAP layers, and aggressive execution logic for high-volatility assets like CROISSANTS.
+We refined our strategy using live backtests and market simulations, focusing on capitalizing on temporary inefficiencies between components and their baskets. Our manual trading also improved significantly in this round.
 
 ---
 
@@ -79,6 +83,3 @@ We used a full suite of testing and visualization tools to build, debug, and opt
 Huge thanks to [**@jmerle**](https://github.com/jmerle) for making his tools public and battle-tested. These made the IMC competition **actually fun to engineer for**.
 
 ---
-
-
-
