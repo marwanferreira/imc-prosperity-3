@@ -4,9 +4,6 @@ import jsonpickle
 from math import log, sqrt, exp
 from statistics import mean, pstdev
 
-# =============================================================================
-# PARAMÈTRES GLOBAUX
-# =============================================================================
 POSITION_LIMITS = {
     "RAINFOREST_RESIN": 50,
     "KELP": 50,
@@ -16,7 +13,6 @@ POSITION_LIMITS = {
     "DJEMBES": 50,
     "PICNIC_BASKET1": 60,
     "PICNIC_BASKET2": 60,
-    # Nouveaux produits
     "VOLCANIC_ROCK": 400,
     "VOLCANIC_ROCK_VOUCHER_9500": 200,
     "VOLCANIC_ROCK_VOUCHER_9750": 200,
@@ -36,31 +32,16 @@ STRIKES = {
     "VOLCANIC_ROCK_VOUCHER_10500": 10500,
 }
 
-# Fenêtre de calcul de volatilité et momentum
 VOL_WINDOW = 20
 MOMENTUM_WINDOW = 10
 EPSILON = 1e-6
-
-# Seuil pour distinguer stable/volatile
 VOLATILITY_THRESHOLD = 5
-
-# Paramètres d'estimation de la "time value"
 BASE_ALPHA = 0.6
-
-# Durée de vie max (rounds)
 MAX_TIME_TO_EXPIRY = 7
-
-# Nombre de niveaux de market-making
 NUM_LEVELS = 3  
-
-# Stop-loss trigger ajusté (passé de 3% à 2,8%)
 STOP_LOSS_TRIGGER = 0.028
 
-# =============================================================================
-# FONCTIONS UTILES – PRICING BLACK–SCHOLES
-# =============================================================================
 def erf(x: float) -> float:
-    # Approximation d'Abramowitz & Stegun
     a1, a2, a3, a4, a5 = 0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429
     p = 0.3275911
     sign = 1 if x >= 0 else -1
@@ -85,16 +66,8 @@ def option_delta_bs(S: float, K: float, T: float, sigma: float, r: float = 0.0) 
     d1 = (log(S/K) + (r + 0.5 * sigma**2) * T) / (sigma * sqrt(T) + EPSILON)
     return norm_cdf(d1)
 
-# =============================================================================
-# CLASSE TRADER – VERSION AMÉLIORÉE (objectif ~50k+ PnL)
-# =============================================================================
 class Trader:
     def run(self, state: TradingState):
-        """
-        Stratégie visant à atteindre un PnL d'au moins 50k.
-        Combine market making multi-niveaux (agressif), stop-loss partiel,
-        arbitrage sur paniers, et gestion des vouchers.
-        """
         result = {}
         conversions = 0
         memory = {}
@@ -104,17 +77,14 @@ class Trader:
             except:
                 memory = {}
 
-        # Stockage du prix moyen (avg_cost) pour stop-loss & delta-hedging
         if "avg_costs" not in memory:
             memory["avg_costs"] = {}
         avg_costs = memory["avg_costs"]
 
-        # 1) Détection du round pour le time_to_expiry
         current_day = getattr(state, "day", 0)
         time_to_expiry = max(0, MAX_TIME_TO_EXPIRY - current_day)
         memory["time_to_expiry"] = time_to_expiry
 
-        # 2) Calcul des indicateurs (fair values, volatilités, momentum)
         fair_values = {}
         volatilities = {}
         regimes = {}
@@ -146,7 +116,6 @@ class Trader:
                 mom = 0
             momentums[product] = mom
 
-        # 3) Market Making sur produits classiques + VOLCANIC_ROCK
         for product in [
             "RAINFOREST_RESIN", "KELP", "SQUID_INK",
             "CROISSANTS", "JAMS", "DJEMBES", "VOLCANIC_ROCK"
@@ -169,7 +138,6 @@ class Trader:
                 if orders:
                     result[product] = orders
 
-        # 4) Basket Arbitrage
         for basket, comps in [
             ("PICNIC_BASKET1", BASKET1_COMPONENTS),
             ("PICNIC_BASKET2", BASKET2_COMPONENTS)
@@ -185,7 +153,6 @@ class Trader:
                 if orders:
                     result[basket] = orders
 
-        # 5) Gestion des Vouchers
         rock_fv = fair_values.get("VOLCANIC_ROCK", 10000)
         rock_vol = volatilities.get("VOLCANIC_ROCK", 100)
         for voucher in STRIKES:
@@ -209,13 +176,11 @@ class Trader:
         memory["avg_costs"] = avg_costs
         return result, conversions, jsonpickle.encode(memory)
 
-    # --------------------------- MULTI-NIVEAUX MARKET MAKING -------------------------
     def multi_level_market_make(self, product: str, order_depth: OrderDepth,
                                 fair_value: float, volatility: float, regime: str,
                                 momentum: float, position: int, limit: int,
                                 avg_costs: Dict[str, float], memory: dict) -> List[Order]:
         orders = []
-        # Stop-loss partiel dynamique
         if position != 0 and product in avg_costs and avg_costs[product] != 0:
             current_price = fair_value
             entry_price = avg_costs[product]
@@ -234,7 +199,6 @@ class Trader:
                     position += partial_close
             memory.setdefault("positions_override", {})[product] = position
 
-        # Paramètres ajustés pour plus d'agressivité
         if regime == "stable":
             spread_factor = 0.0075
             confidence_mult = 2.1
@@ -256,7 +220,6 @@ class Trader:
         step = max(final_spread // (NUM_LEVELS if NUM_LEVELS > 0 else 1), 1)
         current_position = position
 
-        # ACHATS multi-niveaux
         for i in range(1, NUM_LEVELS + 1):
             buy_level_price = fair_value - i * step
             for ask_price, ask_volume in sorted(order_depth.sell_orders.items()):
@@ -273,7 +236,6 @@ class Trader:
             if abs(current_position) >= limit:
                 break
 
-        # VENTES multi-niveaux
         for i in range(1, NUM_LEVELS + 1):
             sell_level_price = fair_value + i * step
             for bid_price, bid_volume in sorted(order_depth.buy_orders.items(), reverse=True):
@@ -293,67 +255,13 @@ class Trader:
         memory.setdefault("positions_override", {})[product] = current_position
         return orders
 
-    # --------------------- STRATÉGIE BREAKOUT AVEC TRAILING STOP ---------------------
     def breakout_strategy(self, product: str, state: TradingState,
                           fair_value: float, momentum: float,
                           local_high_low: tuple, position: int, limit: int,
                           avg_costs: Dict[str, float], memory: dict) -> List[Order]:
         orders = []
-        local_high, local_low = local_high_low
-        current_price = fair_value
-        dir_key = f"{product}_directional_pos"
-        directional_pos = memory.get(dir_key, 0)
-        ts_key = f"{product}_trailing_stop"
-        trailing_stop = memory.get(ts_key, None)
-
-        if directional_pos > 0 and trailing_stop is not None:
-            if current_price < trailing_stop:
-                qty_to_sell = directional_pos
-                best_bid = self.get_best_bid(state.order_depths[product]) or (current_price - 999)
-                orders.append(Order(product, best_bid, -qty_to_sell))
-                directional_pos = 0
-                trailing_stop = None
-        elif directional_pos < 0 and trailing_stop is not None:
-            if current_price > trailing_stop:
-                qty_to_buy = abs(directional_pos)
-                best_ask = self.get_best_ask(state.order_depths[product]) or (current_price + 999)
-                orders.append(Order(product, best_ask, qty_to_buy))
-                directional_pos = 0
-                trailing_stop = None
-
-        if directional_pos > 0:
-            new_stop = current_price * (1.0 - TRAIL_STOP_FACTOR)
-            if trailing_stop is None or new_stop > trailing_stop:
-                trailing_stop = new_stop
-        elif directional_pos < 0:
-            new_stop = current_price * (1.0 + TRAIL_STOP_FACTOR)
-            if trailing_stop is None or new_stop < trailing_stop:
-                trailing_stop = new_stop
-
-        if directional_pos == 0:
-            if (momentum > MOMENTUM_THRESHOLD) or (current_price > local_high + 1.5):
-                extra_qty = int(EXTRA_POSITION_RATIO * limit)
-                best_ask = self.get_best_ask(state.order_depths[product]) or (current_price + 999)
-                if extra_qty > 0 and abs(position + extra_qty) < limit:
-                    orders.append(Order(product, best_ask, extra_qty))
-                    directional_pos = extra_qty
-                    trailing_stop = current_price * (1.0 - TRAIL_STOP_FACTOR)
-                    old_size = position
-                    avg_costs[product] = self.update_avg_cost(avg_costs.get(product, 0), old_size, best_ask, extra_qty)
-            elif (momentum < -MOMENTUM_THRESHOLD) or (current_price < local_low - 1.5):
-                extra_qty = int(EXTRA_POSITION_RATIO * limit)
-                best_bid = self.get_best_bid(state.order_depths[product]) or (current_price - 999)
-                if extra_qty > 0 and abs(position - extra_qty) < limit:
-                    orders.append(Order(product, best_bid, -extra_qty))
-                    directional_pos = -extra_qty
-                    trailing_stop = current_price * (1.0 + TRAIL_STOP_FACTOR)
-                    old_size = position
-                    avg_costs[product] = self.update_avg_cost(avg_costs.get(product, 0), old_size, best_bid, -extra_qty)
-        memory[dir_key] = directional_pos
-        memory[ts_key] = trailing_stop
         return orders
 
-    # ----------------------------- BASKET ARBITRAGE -----------------------------
     def basket_arbitrage(self, basket_name: str, components: Dict[str, int],
                          state: TradingState, fair_values: Dict[str, float],
                          volatilities: Dict[str, float]) -> List[Order]:
@@ -385,7 +293,6 @@ class Trader:
                     break
         return orders
 
-    # ---------------------- VOUCHER GESTION (PRICING BS + DELTA-HEDGING) ----------------------
     def voucher_market_make(self, voucher_name: str,
                             voucher_depth: OrderDepth,
                             rock_fair_value: float,
@@ -440,7 +347,6 @@ class Trader:
                     break
         return orders
 
-    # ---------------------- DELTA HEDGING ----------------------
     def delta_hedge(self, rock_name: str, qty_voucher: int, memory: dict,
                     is_buy_voucher: bool, ratio: float = 0.5):
         hedge_orders = memory.get("hedge_orders", [])
@@ -453,7 +359,6 @@ class Trader:
             hedge_orders.append((rock_name, hedge_qty))
         memory["hedge_orders"] = hedge_orders
 
-    # ---------------------- MISE À JOUR DU PRIX MOYEN ----------------------
     def update_avg_cost(self, old_avg: float, old_size: int, trade_price: float, trade_qty: int) -> float:
         new_size = old_size + trade_qty
         if new_size == 0:
@@ -462,7 +367,6 @@ class Trader:
         trade_value = trade_price * trade_qty
         return (old_value + trade_value) / new_size
 
-    # ---------------------- MÉTHODES UTILITAIRES (BEST BID/ASK) ----------------------
     def get_best_bid(self, order_depth: OrderDepth):
         if not order_depth.buy_orders:
             return None
