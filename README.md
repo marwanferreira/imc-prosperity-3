@@ -75,8 +75,8 @@ We refined our strategy using live backtests and market simulations, focusing on
 - 🌍 **42nd place worldwide**
 - 🇫🇷 **1st in France**
 - 🕹️ **96th in manual trading**
-- 📈 **IMC evaluation score:** Major improvement over Round 2  
-- 📊 **Cumulative total profit:** **482,195 seashells**
+- 📈 **IMC evaluation score: **49,350 seashells** 
+- 🧪 Local backtest peak: **554,730seashells**
 
 ####  Strategy:
 
