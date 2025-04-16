@@ -69,7 +69,7 @@ We implemented a **fair-value market making model**, relying on constant mid-pri
 We refined our strategy using live backtests and market simulations, focusing on capitalizing on temporary inefficiencies between components and their baskets. Our manual trading also improved significantly in this round.
 
 ---
-## 🧠 Round 3: *Options, Delta Hedging & Regime-Switching Alpha*
+### Round 3: *Options, Delta Hedging & Regime-Switching Alpha*
 
 - 🐚 **482,195 seashells**
 - 🌍 **42nd place worldwide**
@@ -78,13 +78,11 @@ We refined our strategy using live backtests and market simulations, focusing on
 - 📈 **IMC evaluation score:** Major improvement over Round 2  
 - 📊 **Cumulative total profit:** **482,195 seashells**
 
----
-
-## 🚀 Strategy Highlights
+#### 🚀 Strategy Highlights
 
 In Round 3, we extended our multi-product trading engine by integrating **options pricing**, **live delta hedging**, and **regime-adaptive behaviors**, resulting in a major boost in PnL and global ranking.
 
-### Core Components:
+#### Core Components:
 - 🧮 **Black-Scholes options pricing** for theoretical valuation.
 - ⚖️ **Delta hedging** using the underlying asset with frequent rebalancing.
 - 📉📈 **Regime switching** based on real-time volatility and momentum:
@@ -95,9 +93,8 @@ In Round 3, we extended our multi-product trading engine by integrating **option
 - 🧺 **Basket arbitrage** on PICNIC_BASKET1 and PICNIC_BASKET2 using synthetic component value models.
 - 🛡️ **Capital protection & drawdown control** through rolling position limits and live PnL risk checks.
 
----
 
-## ⚙️ Engineering Refinements
+#### Engineering Refinements
 
 - Modular, event-driven architecture for handling bursts with minimal latency.
 - Rebuilt trade/message parsers for cleaner state management.
