@@ -78,7 +78,7 @@ We refined our strategy using live backtests and market simulations, focusing on
 - 📈 **IMC evaluation score:** Major improvement over Round 2  
 - 📊 **Cumulative total profit:** **482,195 seashells**
 
-#### 🚀 Strategy Highlights
+####  Strategy:
 
 In Round 3, we extended our multi-product trading engine by integrating **options pricing**, **live delta hedging**, and **regime-adaptive behaviors**, resulting in a major boost in PnL and global ranking.
 
