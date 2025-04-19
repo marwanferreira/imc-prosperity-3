@@ -102,7 +102,41 @@ In Round 3, we extended our multi-product trading engine by integrating **option
 - Stress-tested in multiple backtest environments: high-volatility, skewed pricing, and synthetic imbalance scenarios.
 
 ---
+### Round 4: *Macarons, Vouchers & Everything in Between*
 
+- 🐚 **767,030 seashells**
+- 🌍 **19th place worldwide**
+- 🇫🇷 **1st in France**
+- 🕹️ **486th in manual trading**
+- 📈 IMC evaluation score: **43,540 seashells**  
+- 🧪 Local backtest peak: **223,250 seashells**
+
+**Strategy:**
+
+In Round 4, we pushed our trading engine to its limits — both literally and algorithmically — by building a **comprehensive multi-asset framework** that handled **options, baskets, and conversions** in a unified and data-driven way.
+
+We started by discarding unprofitable assets like **MAGNIFICENT_MACARONS** as standalone products and used them **solely as conversion bridges**. This unlocked better arbitrage flows across more reliable instruments.
+
+#### Core Components:
+
+- 📈 **Hybrid fair value estimation** (EMA + rolling mean) for dynamic valuation.
+- 🌪️ **Volatility and momentum detection** to classify regimes and adapt spreads.
+- 🎯 **Multi-level market making** with confidence-adjusted order sizing.
+- 🛍️ **PICNIC_BASKET1 & BASKET2 arbitrage** using synthetic value reconstruction.
+- 🧮 **Voucher pricing using Black-Scholes**, paired with:
+  - 🔁 **Delta hedging** using VOLCANIC_ROCK
+  - 🧠 **Time-to-expiry decay modeling**
+- 🚨 **Stop-loss and trailing exit logic** for adverse momentum regimes.
+- 🧊 **Capital preservation** via rolling average cost tracking and dynamic spread widening.
+
+#### Key Decisions:
+
+- Fully disabled **breakout trading** and high-risk speculation.
+- Focused on **stable, scalable alpha** across well-understood edges.
+- Switched off MACARONS trading after early backtest PnLs showed consistent loss.
+- Centralized signal logic and reduced hardcoding — favoring dynamic estimators over assumptions.
+
+---
 ## 🛠️ tools & tech
 
 We used a full suite of testing and visualization tools to build, debug, and optimize our strategies:
