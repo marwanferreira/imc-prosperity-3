@@ -100,7 +100,7 @@ class Trader:
             if bid and ask:
                 mid = (bid + ask)/2
                 hist.append(mid)
-                price_hist[sym] = hist[-BREA KOUT_WINDOW*2:]
+                price_hist[sym] = hist[-BREAKOUT_WINDOW*2:]
             # VWAP calc if trades exist
             trades = state.market_trades.get(sym, [])
             if trades:
