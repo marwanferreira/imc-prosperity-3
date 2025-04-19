@@ -26,6 +26,9 @@ STRIKES = {
 VOL_WINDOW, MOMENTUM_WINDOW = 20, 10
 EPSILON, MAX_TIME_TO_EXPIRY = 1e-6, 7
 NUM_LEVELS, STOP_LOSS_TRIGGER = 3, 0.028
+# Threshold for classifying volatile regimes
+VOLATILITY_THRESHOLD = 5
+# Counterparty exploitation settings
 CP_EXPLOIT_THRESHOLD = 5
 CP_PRICE_DEVIATION = 0.01  # 1%
 
@@ -207,8 +210,6 @@ class Trader:
     def basket_arbitrage(self, basket: str, comps: Dict[str,int],
                          state: TradingState, fair: Dict[str,float], vol: Dict[str,float]) -> List[Order]:
         orders: List[Order] = []
-        # Round4 logic: buy basket if undervalued, sell if overvalued
-        # Calculate theoretical basket price
         theo = sum(fair[p]*qty for p,qty in comps.items())
         depth = state.order_depths[basket]
         best_bid = max(depth.buy_orders.keys()) if depth.buy_orders else None
@@ -231,8 +232,6 @@ class Trader:
         T = tte/252
         fair_opt = option_price_bs(rock_fv, K, T, sigma)
         delta = option_delta_bs(rock_fv, K, T, sigma)
-        # hedge delta if needed
-        # Place quotes around fair_opt
         best_bid = max(depth.buy_orders.keys()) if depth.buy_orders else None
         best_ask = min(depth.sell_orders.keys()) if depth.sell_orders else None
         if best_ask and best_ask < fair_opt:
