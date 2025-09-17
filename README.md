@@ -8,6 +8,8 @@ We placed:
 **6th in Europe** 🇪🇺  
 **23rd globally** 🌍
 
+![Final IMC Rankings](imc_result.jpeg)
+
 ---
 
 ## the competition
